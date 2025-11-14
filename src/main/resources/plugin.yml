@@ -1,0 +1,8 @@
+name: Main
+version: '1.0-SNAPSHOT'
+main: org.main.Main
+api-version: '1.21'
+commands:
+  setflow:
+    description: Set your current Flow level
+    usage: /setflow <amount>
