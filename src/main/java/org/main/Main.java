@@ -1,5 +1,6 @@
 package org.main;
 
+import org.main.ItemManager;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
@@ -19,6 +20,7 @@ public final class Main extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        ItemManager.init();
         System.out.println("Flow system initialized!");
 
         // Initialize flow for online players (in case of reload)
