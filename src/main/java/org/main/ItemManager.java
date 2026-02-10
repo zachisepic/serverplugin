@@ -14,10 +14,27 @@ import java.util.List;
 public class ItemManager {
     public static ItemStack Memory_Disk;
     public static ItemStack High_Disk;
+    public static ItemStack Unstable_Shard;
 
     public static void init(){
         createMemory_Disk();
         createHigh_Disk();
+        createUnstable_Shard();
+    }
+
+    private static void createUnstable_Shard(){
+        ItemStack object = new ItemStack(Material.ECHO_SHARD);
+        ItemMeta meta = object.getItemMeta();
+
+        meta.setDisplayName("Unstable Shard");
+        meta.addEnchant(Enchantment.UNBREAKING, 3, true);
+        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        List<String> lores = new ArrayList<>();
+        lores.add("A shard sharp enough to write memory to an empty memory disk");
+        meta.setLore(lores);
+
+        object.setItemMeta(meta);
+        Unstable_Shard = object;
     }
     private static void createHigh_Disk(){
         ItemStack item = new ItemStack(Material.MUSIC_DISC_13);
