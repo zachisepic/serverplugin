@@ -19,6 +19,7 @@ import org.bukkit.scheduler.BukkitTask;
 import java.util.*;
 
 public final class Main extends JavaPlugin {
+    private RiftManager riftManager;
 
     // Flow system
     private final Map<UUID, Integer> flowLevels = new HashMap<>();
@@ -33,10 +34,13 @@ public final class Main extends JavaPlugin {
     @Override
     public void onEnable() {
         world = Bukkit.getWorld("world");
-        spawnMobs(9, 10, 5 * 20);
+
 
         ItemManager.init();
         new CraftingManager(this).registerAllRecipes();
+        riftManager = new RiftManager(Bukkit.getWorlds().get(0));
+
+        startRiftScheduler(); // 👈 starts the 10–20 min cycle
 
         getLogger().info("Flow system initialized!");
 
@@ -52,30 +56,34 @@ public final class Main extends JavaPlugin {
         // Start updating flow bar and regen
         startFlowUpdater();
     }
-    // mob spawning logic
-    public void spawnMobs(int size, int mobCap, int spawnTime){
-        task = new BukkitRunnable() {
-            List<Entity> removal = new ArrayList<>();
-            @Override
-            public void run(){
-                for (Entity entity : entities){
-                    if (!entity.isValid() || entity.isDead()) removal.add(entity);
-                }
-                entities.removeAll(removal);
-                int diff = mobCap - entities.size();
-                if (diff <= 0) return;
-                int spawnAmount = (int) (Math.random() * (diff + 1)), count = 0;
-                while (count <= spawnAmount) {
-                    count++;
-                    int ranX = getRandomWithNeg(size), ranZ = getRandomWithNeg(size);
-                    Block block = world.getHighestBlockAt(ranX, ranZ);
-                    Location loc = block.getLocation().clone().add(0,1,0);
-
-                    entities.add(world.spawnEntity(loc, EntityType.ZOMBIE));
-                }
-            }
-        }.runTaskTimer(this, 0L, spawnTime);
+    private void startRiftScheduler() {
+        scheduleNextRift();
     }
+
+    private void scheduleNextRift() {
+        int minMinutes = 10;
+        int maxMinutes = 20;
+
+        int delayMinutes = minMinutes + new java.util.Random().nextInt(maxMinutes - minMinutes + 1);
+        long delayTicks = delayMinutes * 60L * 20L; // minutes → ticks
+
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            spawnRift();          // spawn the rift
+            scheduleNextRift();   // schedule the next one
+        }, delayTicks);
+    }
+    private void spawnRift() {
+        Location loc = riftManager.findRiftSpawnLocation();
+        if (loc == null) return;
+
+        Bukkit.broadcastMessage(
+                "§5§l⚠ Instability detected! §dRift forming at §fX: "
+                        + loc.getBlockX() + " Y: " + loc.getBlockZ()
+        );
+    }
+
+    // mob spawning logic
+
 
     private int getRandomWithNeg(int size) {
         int random = (int) (Math.random() * (size + 1));
