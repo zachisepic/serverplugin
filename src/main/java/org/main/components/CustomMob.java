@@ -21,8 +21,8 @@ import static org.main.Utils.color;
 
 public enum CustomMob {
 
-    Unstable_Husk("&6Unstable Husk", 40, 50, EntityType.HUSK, new ItemStack(Material.DIAMOND_SWORD), null, new LootItem(Unstable_Shard, 1,3,100))
-
+    Dark_Zombie("&6Dark Zombie", 40, 50, EntityType.ZOMBIE, new ItemStack(Material.IRON_SWORD), null, new LootItem(Unstable_Shard, 1,3,100)),
+    Dark_Skeleton("&6Dark Skeleton", 30, 50, EntityType.SKELETON, new ItemStack(Material.BOW), null, new LootItem(Unstable_Shard, 1,3,100))
     ;
 
     private String name;
