@@ -19,17 +19,17 @@ import org.bukkit.scheduler.BukkitTask;
 import java.util.*;
 
 public final class Main extends JavaPlugin {
-    private RiftManager riftManager;
 
     // Flow system
     private final Map<UUID, Integer> flowLevels = new HashMap<>();
 
     // Custom item storage
     private ItemStorageManager storageManager;
+    private AbilityManager abilityManager;
+    private AbilityMenu abilityMenu;
 
     private World world;
     private BukkitTask task;
-    private List<Entity> entities = new ArrayList<>();
 
     @Override
     public void onEnable() {
@@ -38,9 +38,13 @@ public final class Main extends JavaPlugin {
 
         ItemManager.init();
         new CraftingManager(this).registerAllRecipes();
-        riftManager = new RiftManager(Bukkit.getWorlds().get(0));
 
-        startRiftScheduler(); // 👈 starts the 10–20 min cycle
+        this.abilityManager = new AbilityManager(this);
+        this.abilityMenu = new AbilityMenu(this, abilityManager);
+
+        getServer().getPluginManager().registerEvents(new MobListener(), this);
+        getServer().getPluginManager().registerEvents(new AbilityListener(this, abilityManager), this);
+        getServer().getPluginManager().registerEvents(abilityMenu, this);
 
         getLogger().info("Flow system initialized!");
 
@@ -55,31 +59,6 @@ public final class Main extends JavaPlugin {
 
         // Start updating flow bar and regen
         startFlowUpdater();
-    }
-    private void startRiftScheduler() {
-        scheduleNextRift();
-    }
-
-    private void scheduleNextRift() {
-        int minMinutes = 10;
-        int maxMinutes = 20;
-
-        int delayMinutes = minMinutes + new java.util.Random().nextInt(maxMinutes - minMinutes + 1);
-        long delayTicks = delayMinutes * 60L * 20L; // minutes → ticks
-
-        Bukkit.getScheduler().runTaskLater(this, () -> {
-            spawnRift();          // spawn the rift
-            scheduleNextRift();   // schedule the next one
-        }, delayTicks);
-    }
-    private void spawnRift() {
-        Location loc = riftManager.findRiftSpawnLocation();
-        if (loc == null) return;
-
-        Bukkit.broadcastMessage(
-                "§5§l⚠ Instability detected! §dRift forming at §fX: "
-                        + loc.getBlockX() + " Y: " + loc.getBlockZ()
-        );
     }
 
     // mob spawning logic
@@ -127,6 +106,11 @@ public final class Main extends JavaPlugin {
                     }
                     bar.append("§b⟧ §7").append(flow);
 
+                    // Show active ability
+                    org.main.components.AbilityType active = abilityManager.getActiveAbility(p);
+                    String abilityName = (active != null) ? " §8| §f" + active.getName() : " §8| §7None";
+                    bar.append(abilityName);
+
                     // Send action bar
                     p.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(bar.toString()));
                 }
@@ -160,20 +144,12 @@ public final class Main extends JavaPlugin {
             return true;
         }
 
-        // Example command to give a Memory Disk
-        if (command.getName().equalsIgnoreCase("givedisk")) {
+        if (command.getName().equalsIgnoreCase("abilities")) {
             if (!(sender instanceof Player)) {
                 sender.sendMessage("§cOnly players can use this command!");
                 return true;
             }
-
-            Player p = (Player) sender;
-            ItemStack disk = ItemManager.Memory_Disk.clone();
-
-            // Add to player's custom item storage
-            storageManager.addItem(p, "memory_disks", disk);
-
-            p.sendMessage("§bYou received a Memory Disk!");
+            abilityMenu.open((Player) sender);
             return true;
         }
 
@@ -183,5 +159,17 @@ public final class Main extends JavaPlugin {
     // Getter for storage manager
     public ItemStorageManager getStorageManager() {
         return storageManager;
+    }
+
+    public AbilityManager getAbilityManager() {
+        return abilityManager;
+    }
+
+    public int getFlow(Player player) {
+        return flowLevels.getOrDefault(player.getUniqueId(), 0);
+    }
+
+    public void setFlow(Player player, int amount) {
+        flowLevels.put(player.getUniqueId(), Math.max(0, Math.min(100, amount)));
     }
 }

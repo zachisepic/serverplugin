@@ -6,3 +6,6 @@ commands:
   setflow:
     description: Set your current Flow level
     usage: /setflow <amount>
+  abilities:
+    description: Open the ability selection menu
+    aliases: [ability]
